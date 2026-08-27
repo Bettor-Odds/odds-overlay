@@ -96,13 +96,18 @@ class OverlayService : Service() {
             onFrameSettled = { bitmap ->
                 scope.launch {
                     val hits = ocr.recognize(bitmap)
+                    // A pass that finds nothing is usually a transient bad frame - a glare, an
+                    // animation, a momentary cover - not a screen without odds. Keep the existing
+                    // chips; genuine navigation clears them through onFrameChanged instead.
                     val styled = if (hits.size >= MIN_HITS_TO_DRAW) {
                         ChipStyler.style(bitmap, hits)
                     } else {
-                        emptyList()
+                        null
                     }
                     bitmap.recycle()
-                    withContext(Dispatchers.Main) { overlayView?.show(styled) }
+                    if (styled != null) {
+                        withContext(Dispatchers.Main) { overlayView?.show(styled) }
+                    }
                 }
             }
         ).also { it.start() }

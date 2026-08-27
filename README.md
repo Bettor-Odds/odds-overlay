@@ -55,6 +55,23 @@ or open the project in Android Studio, which writes it on first sync.
 
 ## Status
 
-Builds clean on JDK 17 + SDK 35. All 9 conversion unit tests pass. APK is 55MB (ML Kit OCR models
-are bundled so recognition works with no network). Not yet run on a physical device - the overlay
-alignment against Novig's live board is the one thing that needs a real phone to confirm.
+Verified end to end on an Android 14 emulator: screen capture -> on-device OCR -> conversion ->
+in-place overlay. All six test prices converted correctly (56.6% -> -130, 43.4% -> +130, 40.0% ->
++150, 60.0% -> -150, 72.5% -> -264, 27.5% -> +264) and drew on the correct rows. Conversion math is
+also covered by 9 unit tests.
+
+A debug-only `DebugBoardActivity` (debug source set, never in release) shows a static percentage
+board for verifying the overlay without a live app:
+`adb shell am start -n com.bettorodds.oddsoverlay/.DebugBoardActivity`.
+
+### Known items to tune on a real device
+These surfaced during emulator testing and are best finished against the real Novig app, whose OCR
+boxes are exact (the emulator's scaled test host is not):
+
+- **Chip masking.** The converted chip should fully cover the original percentage. Bleed is set
+  generously; confirm it covers cleanly at Novig's real font size and adjust `HORIZONTAL_BLEED` /
+  `VERTICAL_BLEED` in `OverlayView`.
+- **Transient misreads.** During screen animations OCR can briefly read a fragment and draw a wrong
+  value that sticks once the screen goes static. A real static board avoids this, but a robust
+  build should require a value to be read twice before committing it. Not yet implemented.
+- **Battery/heat.** Measure over 20-30 minutes on a real phone; the emulator gives no useful number.

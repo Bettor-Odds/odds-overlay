@@ -21,6 +21,7 @@ class OverlayView(context: Context) : View(context) {
         textAlign = Paint.Align.CENTER
     }
     private val textBounds = Rect()
+    private val locationOnScreen = IntArray(2)
 
     private var hits: List<StyledHit> = emptyList()
 
@@ -37,6 +38,11 @@ class OverlayView(context: Context) : View(context) {
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        // Hit bounds are in capture space, whose origin is the physical top-left of the screen.
+        // The overlay window's own top-left can sit below the status bar, so translate the canvas by
+        // the view's actual on-screen position to put chips back where their percentages are.
+        getLocationOnScreen(locationOnScreen)
+        canvas.translate(-locationOnScreen[0].toFloat(), -locationOnScreen[1].toFloat())
         for (hit in hits) {
             drawChip(canvas, hit)
         }
@@ -85,8 +91,8 @@ class OverlayView(context: Context) : View(context) {
     }
 
     private companion object {
-        const val HORIZONTAL_BLEED = 0.08f
-        const val VERTICAL_BLEED = 0.12f
+        const val HORIZONTAL_BLEED = 0.16f
+        const val VERTICAL_BLEED = 0.20f
         const val INITIAL_TEXT_SCALE = 0.82f
         const val MIN_TEXT_SIZE = 8f
         const val TEXT_SIZE_STEP = 0.5f
