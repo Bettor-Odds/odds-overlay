@@ -78,73 +78,66 @@
     <p class="sub">Turns the percentages in prediction market apps back into American odds — drawn right on top of the app, live as you scroll.</p>
   </header>
 
-  <!-- ANDROID VIEW -->
-  <div id="android">
-    <a class="cta" id="dl" href="#">Download for Android</a>
-    <p class="fineprint">Free. Reads odds on-device; only goes online to check for updates. Not on the Play Store — installs directly.</p>
+  <div id="ios-note" class="note" style="display:none;text-align:center">
+    <b>Heads up - this is an Android app.</b><br>
+    iPhone can't let one app draw over another, so there's no iPhone version. The steps below are for
+    an Android phone.
+  </div>
 
-    <div class="note">
-      <b>Heads up:</b> to read the odds on screen it uses Android's accessibility setting, so the
-      permission screen mentions "view and control your screen." It only reads the odds - nothing is
-      recorded. Not in the Play Store; installs directly.
+  <a class="cta" id="dl" href="#">Download for Android</a>
+  <p class="fineprint">Free. Reads odds on-device; only goes online to check for updates. Not on the Play Store — installs directly.</p>
+
+  <div class="note">
+    <b>Heads up:</b> to read the odds on screen it uses Android's accessibility setting, so the
+    permission screen mentions "view and control your screen." It only reads the odds - nothing is
+    recorded and nothing leaves your phone.
+  </div>
+
+  <h2>Set up (about 2 minutes, once)</h2>
+
+  <div class="step">
+    <div class="num">1</div>
+    <div>
+      <h3>Install it</h3>
+      <p>Tap the downloaded file. If it warns you, tap <span class="k">Settings</span>, turn on
+      <span class="k">Allow from this source</span>, go back, and install.</p>
     </div>
+  </div>
 
-    <h2>Set up (about 2 minutes, once)</h2>
-
-    <div class="step">
-      <div class="num">1</div>
-      <div>
-        <h3>Install it</h3>
-        <p>Tap the downloaded file. If it warns you, tap <span class="k">Settings</span>, turn on
-        <span class="k">Allow from this source</span>, go back, and install.</p>
-      </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div>
+      <h3>Allow restricted settings</h3>
+      <p>Because it installs outside the Play Store, Android hides the switch until you unlock it:</p>
+      <p class="tap">Settings <span class="arw">&rsaquo;</span> Apps <span class="arw">&rsaquo;</span>
+      Odds Converter <span class="arw">&rsaquo;</span> <span class="k">&#8942;</span> (top-right)
+      <span class="arw">&rsaquo;</span> <span class="k">Allow restricted settings</span></p>
+      <p class="fine">Can't find the app? Tap <span class="k">See all apps</span> first. No "restricted
+      settings" line? Your phone doesn't need this - skip to step 3.</p>
     </div>
+  </div>
 
-    <div class="step">
-      <div class="num">2</div>
-      <div>
-        <h3>Allow restricted settings</h3>
-        <p>Because it installs outside the Play Store, Android hides the switch until you unlock it:</p>
-        <p class="tap">Settings <span class="arw">&rsaquo;</span> Apps <span class="arw">&rsaquo;</span>
-        Odds Converter <span class="arw">&rsaquo;</span> <span class="k">&#8942;</span> (top-right)
-        <span class="arw">&rsaquo;</span> <span class="k">Allow restricted settings</span></p>
-        <p class="fine">Can't find the app? Tap <span class="k">See all apps</span> first. No "restricted
-        settings" line? Your phone doesn't need this - skip to step 3.</p>
-      </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div>
+      <h3>Turn on the service</h3>
+      <p class="tap">Settings <span class="arw">&rsaquo;</span> Accessibility
+      <span class="arw">&rsaquo;</span> Odds Converter <span class="arw">&rsaquo;</span>
+      turn it <span class="k">On</span> <span class="arw">&rsaquo;</span> <span class="k">Allow</span></p>
+      <p class="fine">It says "view and control your screen" - that's how it reads the odds. It only
+      reads them; nothing is recorded and nothing leaves your phone.</p>
     </div>
+  </div>
 
-    <div class="step">
-      <div class="num">3</div>
-      <div>
-        <h3>Turn on the service</h3>
-        <p class="tap">Settings <span class="arw">&rsaquo;</span> Accessibility
-        <span class="arw">&rsaquo;</span> Odds Converter <span class="arw">&rsaquo;</span>
-        turn it <span class="k">On</span> <span class="arw">&rsaquo;</span> <span class="k">Allow</span></p>
-        <p class="fine">It says "view and control your screen" - that's how it reads the odds. It only
-        reads them; nothing is recorded and nothing leaves your phone.</p>
-      </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div>
+      <h3>Open a prediction market app</h3>
+      <p>A <span class="k">"Show American odds?"</span> prompt pops up - tap
+      <span class="k">Turn on</span>. The percentages become American odds, live as you scroll.
+      Tap <span class="k">Always</span> to skip the prompt next time. It turns off on its own when
+      you leave the app.</p>
     </div>
-
-    <div class="step">
-      <div class="num">4</div>
-      <div>
-        <h3>Open a prediction market app</h3>
-        <p>A <span class="k">"Show American odds?"</span> prompt pops up - tap
-        <span class="k">Turn on</span>. The percentages become American odds, live as you scroll.
-        Tap <span class="k">Always</span> to skip the prompt next time. It turns off on its own when
-        you leave the app.</p>
-      </div>
-    </div>
-
-    <!-- iOS / OTHER VIEW -->
-  <div id="ios" class="ios">
-    <div class="note" style="text-align:center">
-      <b>This is an Android app.</b><br>
-      iPhone can't let one app draw over another, so there's no iPhone version yet.
-      Open this link on an Android phone to install it.
-    </div>
-    <a class="cta small" id="dl2" href="#">Download the APK anyway</a>
-    <p class="fineprint">Only works once installed on Android.</p>
   </div>
 
   <footer>
@@ -155,18 +148,11 @@
 </div>
 
 <script>
-  // Point both buttons at the latest release asset (stable filename across versions).
   var APK = "https://github.com/bettor-odds/odds-overlay/releases/latest/download/odds-overlay.apk";
   document.getElementById("dl").href = APK;
-  document.getElementById("dl2").href = APK;
-
-  // Show the right instructions for the phone in hand.
-  var ua = navigator.userAgent || "";
-  var isAndroid = /Android/i.test(ua);
-  var isiOS = /iPhone|iPad|iPod/i.test(ua);
-  if (!isAndroid && (isiOS || !/Mobile/i.test(ua))) {
-    document.getElementById("android").style.display = "none";
-    document.getElementById("ios").style.display = "block";
+  // Always show the button and steps. Just add a small note for iPhone visitors.
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+    document.getElementById("ios-note").style.display = "block";
   }
 </script>
 </body>
