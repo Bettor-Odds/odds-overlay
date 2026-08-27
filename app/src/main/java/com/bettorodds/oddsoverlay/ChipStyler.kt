@@ -40,6 +40,23 @@ object ChipStyler {
     }
 
     /**
+     * One chip style sampled from the pill behind a real odds value. Used by the node path, which
+     * knows exact positions but paints from a single style. Sampling an actual odds pill - never the
+     * whole screen - avoids picking up a launch splash or a light status bar.
+     */
+    fun sampleStyle(bitmap: Bitmap, bounds: Rect): ChipStyle? {
+        if (bounds.width() <= 0 || bounds.height() <= 0) return null
+        if (bounds.left < 0 || bounds.top < 0 ||
+            bounds.right > bitmap.width || bounds.bottom > bitmap.height
+        ) return null
+        val background = sampleBackground(bitmap, bounds)
+        return ChipStyle(
+            backgroundColor = background,
+            textColor = if (luminance(background) > LUMINANCE_THRESHOLD) Color.BLACK else Color.WHITE
+        )
+    }
+
+    /**
      * Reads the corners just outside the glyphs. The centre of the box is text, so sampling it
      * would return the foreground color and produce a chip that hides its own number.
      */

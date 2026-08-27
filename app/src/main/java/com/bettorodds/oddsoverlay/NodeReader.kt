@@ -26,6 +26,9 @@ object NodeReader {
                 bounds.right <= 0 || bounds.left >= screenWidth
             ) return
             if (bounds.width() <= 0 || bounds.height() <= 0) return
+            // Reject container nodes: a real odds pill is small. Anything spanning a big slice of the
+            // screen is a row or list wrapper whose text happens to include a percentage.
+            if (bounds.height() > screenHeight / 5 || bounds.width() > screenWidth * 85 / 100) return
             // De-duplicate: the same value in the same spot can appear on more than one node.
             val key = (bounds.centerX() / 8).toLong() shl 32 or (bounds.centerY() / 8).toLong()
             if (!seen.add(key)) return

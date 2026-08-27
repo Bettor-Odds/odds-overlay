@@ -21,8 +21,9 @@ import kotlinx.coroutines.withContext
  * Watches the foreground app and, inside a target app, paints American odds over its percentages.
  *
  * Reads odds from the view tree (fast, exact, live) and only falls back to a screenshot + OCR when
- * the app exposes no readable text. Reads on a per-frame cadence while scrolling and a lazy cadence
- * when the board is still, and disarms after a spell of inactivity or when the user leaves the app.
+ * the app exposes no readable text. While scrolling it moves chips by the scroll delta every frame
+ * and re-reads a few times a second to correct drift; when still, it barely works. Disarms after a
+ * spell of inactivity or when the user leaves the app.
  */
 class OddsAccessibilityService : AccessibilityService() {
 
@@ -41,20 +42,32 @@ class OddsAccessibilityService : AccessibilityService() {
     private var armed = false
     private var activatedThisVisit = false
     private var chipStyle: ChipStyle = ThemeSampler.DARK
+    private var themeSampled = false
 
     private var readPending = false
     private var pendingFast = false
+    private var lastScrollAt = 0L
+    private var correcting = false
     private var lastOcrAt = 0L
     private var ocrInFlight = false
 
     private val readRunnable = Runnable { readPending = false; readNodes() }
     private val disarmForIdle = Runnable { if (armed) disarm(keepVisit = true) }
+    private val correctionRunnable = object : Runnable {
+        override fun run() {
+            if (!armed) { correcting = false; return }
+            readNodes()  // snap chips back to true positions
+            if (SystemClock.uptimeMillis() - lastScrollAt < SCROLL_END_MS) {
+                handler.postDelayed(this, CORRECTION_MS)
+            } else {
+                correcting = false  // scrolling stopped; this was the final correction
+            }
+        }
+    }
 
     override fun onServiceConnected() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val bounds = windowManager.currentWindowMetrics.bounds
-        screenWidth = bounds.width()
-        screenHeight = bounds.height()
+        refreshScreenBounds()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -68,17 +81,23 @@ class OddsAccessibilityService : AccessibilityService() {
             }
 
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                if (event.packageName == currentTarget) onTargetActivity(fast = false)
+                if (event.packageName != currentTarget) return
+                if (SystemClock.uptimeMillis() - lastScrollAt < SCROLL_END_MS) return
+                onTargetActivity(fast = false)
             }
 
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
                 if (event.packageName != currentTarget) return
-                if (armed) {
-                    val dy = event.scrollDeltaY
-                    val dx = event.scrollDeltaX
-                    if (dy != 0 || dx != 0) overlayView?.nudge(-dx.toFloat(), -dy.toFloat())
+                lastScrollAt = SystemClock.uptimeMillis()
+                if (!armed) {
+                    if (activatedThisVisit) arm()   // re-arm after an idle disarm
+                    return
                 }
-                onTargetActivity(fast = true)   // re-arms if idle-disarmed
+                resetIdleTimer()
+                val dy = event.scrollDeltaY
+                val dx = event.scrollDeltaX
+                if (dy != 0 || dx != 0) overlayView?.nudge(-dx.toFloat(), -dy.toFloat())
+                startCorrectionLoop()
             }
         }
     }
@@ -88,7 +107,7 @@ class OddsAccessibilityService : AccessibilityService() {
     private fun onForegroundApp(pkg: String, isDebugBoard: Boolean) {
         if (isDebugBoard || TargetApps.isTarget(this, pkg)) {
             if (pkg == currentTarget) return
-            disarm(keepVisit = false)           // clear the previous app's chips/prompt
+            disarm(keepVisit = false)
             removePrompt()
             currentTarget = pkg
             if (isDebugBoard || TargetApps.isAutoOn(this, pkg)) arm() else showPrompt(pkg)
@@ -97,9 +116,8 @@ class OddsAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** Any interaction inside the target: keep the overlay alive and push out the idle timer. */
     private fun onTargetActivity(fast: Boolean) {
-        if (!armed && activatedThisVisit) arm()      // re-arm after an idle disarm
+        if (!armed && activatedThisVisit) arm()
         if (!armed) return
         resetIdleTimer()
         scheduleRead(fast)
@@ -109,26 +127,22 @@ class OddsAccessibilityService : AccessibilityService() {
         removePrompt()
         armed = true
         activatedThisVisit = true
+        themeSampled = false
         attachOverlay()
-        refreshTheme()
         resetIdleTimer()
-        readNodes()            // paint on the first frame
+        readNodes()             // paint on the first frame
         scheduleRead(fast = true)
     }
 
     private fun disarm(keepVisit: Boolean) {
         armed = false
+        correcting = false
         if (!keepVisit) activatedThisVisit = false
         handler.removeCallbacks(disarmForIdle)
         handler.removeCallbacks(readRunnable)
+        handler.removeCallbacks(correctionRunnable)
         readPending = false
         removeOverlay()
-    }
-
-    private fun currentScreenBounds() {
-        val bounds = windowManager.currentWindowMetrics.bounds
-        screenWidth = bounds.width()
-        screenHeight = bounds.height()
     }
 
     private fun leaveTarget() {
@@ -142,10 +156,15 @@ class OddsAccessibilityService : AccessibilityService() {
         handler.postDelayed(disarmForIdle, IDLE_TIMEOUT_MS)
     }
 
-    /** Fast reads track scrolling; slow reads keep a still board fresh without burning battery. */
+    private fun startCorrectionLoop() {
+        if (correcting) return
+        correcting = true
+        handler.postDelayed(correctionRunnable, CORRECTION_MS)
+    }
+
     private fun scheduleRead(fast: Boolean) {
         if (readPending) {
-            if (fast && !pendingFast) {              // upgrade a lazy read to a fast one
+            if (fast && !pendingFast) {
                 handler.removeCallbacks(readRunnable)
                 pendingFast = true
                 handler.postDelayed(readRunnable, FAST_READ_MS)
@@ -159,7 +178,7 @@ class OddsAccessibilityService : AccessibilityService() {
 
     private fun readNodes() {
         if (!armed) return
-        currentScreenBounds()
+        refreshScreenBounds()
         val root = try {
             rootInActiveWindow
         } catch (e: Exception) {
@@ -168,6 +187,7 @@ class OddsAccessibilityService : AccessibilityService() {
         val result = NodeReader.read(root, screenWidth, screenHeight)
         when {
             result.hits.size >= MIN_HITS_TO_DRAW -> {
+                if (!themeSampled) sampleThemeFrom(result.hits.first())
                 val styled = result.hits.map {
                     StyledHit(it.bounds, it.display, chipStyle.backgroundColor, chipStyle.textColor)
                 }
@@ -178,9 +198,13 @@ class OddsAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun refreshTheme() {
+    /** Sample the pill colour behind a real odds value - never the whole screen, which could be a
+     *  launch splash or a light status bar - and reuse it for every chip. */
+    private fun sampleThemeFrom(hit: PriceHit) {
+        themeSampled = true
+        val bounds = hit.bounds
         takeScreenshotBitmap { bitmap ->
-            chipStyle = ThemeSampler.sample(bitmap)
+            ChipStyler.sampleStyle(bitmap, bounds)?.let { chipStyle = it }
             bitmap.recycle()
         }
     }
@@ -217,6 +241,12 @@ class OddsAccessibilityService : AccessibilityService() {
                 }
             }
         )
+    }
+
+    private fun refreshScreenBounds() {
+        val bounds = windowManager.currentWindowMetrics.bounds
+        screenWidth = bounds.width()
+        screenHeight = bounds.height()
     }
 
     private fun showPrompt(pkg: String) {
@@ -274,6 +304,8 @@ class OddsAccessibilityService : AccessibilityService() {
         const val MIN_HITS_TO_DRAW = 2
         const val FAST_READ_MS = 16L
         const val SLOW_READ_MS = 150L
+        const val CORRECTION_MS = 90L
+        const val SCROLL_END_MS = 130L
         const val OCR_INTERVAL_MS = 1000L
         const val IDLE_TIMEOUT_MS = 3 * 60 * 1000L
     }

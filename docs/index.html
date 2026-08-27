@@ -58,6 +58,10 @@
   .step h3{font-size:16px;margin-bottom:3px}
   .step p{color:var(--mut);font-size:14px}
   .step p .k{color:var(--ink);font-weight:600}
+  .step p.tap{margin-top:8px;padding:10px 12px;background:#0c1526;border:1px solid var(--line);
+    border-radius:10px;color:var(--ink);font-size:13.5px;line-height:1.8}
+  .arw{color:var(--grn);padding:0 4px;font-weight:700}
+  .step p.fine{margin-top:8px;font-size:12.5px;color:var(--mut)}
   .ios{display:none}
   .platform-hide{display:none}
   footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:40px;line-height:1.7}
@@ -77,47 +81,62 @@
   <!-- ANDROID VIEW -->
   <div id="android">
     <a class="cta" id="dl" href="#">Download for Android</a>
-    <p class="fineprint">Free. Nothing leaves your phone. Not on the Play Store — installs directly.</p>
+    <p class="fineprint">Free. Reads odds on-device; only goes online to check for updates. Not on the Play Store — installs directly.</p>
 
     <div class="note">
       <b>Heads up:</b> to read the odds on screen it uses Android's accessibility setting, so the
       permission screen mentions "view and control your screen." It only reads the odds - nothing is
-      recorded, nothing leaves your phone. Not in the Play Store; installs directly.
+      recorded. Not in the Play Store; installs directly.
     </div>
 
-    <h2>After it downloads</h2>
+    <h2>Set up (about 2 minutes, once)</h2>
 
     <div class="step">
       <div class="num">1</div>
       <div>
-        <h3>Open the file to install</h3>
-        <p>Tap the download. If it warns you, tap <span class="k">Settings</span> then turn on
-        <span class="k">Allow from this source</span> and go back.</p>
+        <h3>Install it</h3>
+        <p>Tap the downloaded file. If it warns you, tap <span class="k">Settings</span>, turn on
+        <span class="k">Allow from this source</span>, go back, and install.</p>
       </div>
     </div>
 
     <div class="step">
       <div class="num">2</div>
       <div>
-        <h3>Open Odds Converter and tap Enable</h3>
-        <p>It sends you to Accessibility settings. Find <span class="k">Odds Converter</span>, turn it
-        on, and confirm. On Android 13+, if it's greyed out, open the app info menu first and tap
-        <span class="k">Allow restricted settings</span>.</p>
+        <h3>Allow restricted settings</h3>
+        <p>Because it installs outside the Play Store, Android hides the switch until you unlock it:</p>
+        <p class="tap">Settings <span class="arw">&rsaquo;</span> Apps <span class="arw">&rsaquo;</span>
+        Odds Converter <span class="arw">&rsaquo;</span> <span class="k">&#8942;</span> (top-right)
+        <span class="arw">&rsaquo;</span> <span class="k">Allow restricted settings</span></p>
+        <p class="fine">Can't find the app? Tap <span class="k">See all apps</span> first. No "restricted
+        settings" line? Your phone doesn't need this - skip to step 3.</p>
       </div>
     </div>
 
     <div class="step">
       <div class="num">3</div>
       <div>
-        <h3>That's it - open your app</h3>
-        <p>A <span class="k">"Show American odds?"</span> prompt pops up. Tap <span class="k">Turn
-        on</span> and the percentages become American odds. Pick <span class="k">Always</span> to
-        skip the prompt next time. It switches off on its own when you leave the app.</p>
+        <h3>Turn on the service</h3>
+        <p class="tap">Settings <span class="arw">&rsaquo;</span> Accessibility
+        <span class="arw">&rsaquo;</span> Odds Converter <span class="arw">&rsaquo;</span>
+        turn it <span class="k">On</span> <span class="arw">&rsaquo;</span> <span class="k">Allow</span></p>
+        <p class="fine">It says "view and control your screen" - that's how it reads the odds. It only
+        reads them; nothing is recorded and nothing leaves your phone.</p>
       </div>
     </div>
-  </div>
 
-  <!-- iOS / OTHER VIEW -->
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <h3>Open a prediction market app</h3>
+        <p>A <span class="k">"Show American odds?"</span> prompt pops up - tap
+        <span class="k">Turn on</span>. The percentages become American odds, live as you scroll.
+        Tap <span class="k">Always</span> to skip the prompt next time. It turns off on its own when
+        you leave the app.</p>
+      </div>
+    </div>
+
+    <!-- iOS / OTHER VIEW -->
   <div id="ios" class="ios">
     <div class="note" style="text-align:center">
       <b>This is an Android app.</b><br>
@@ -130,7 +149,7 @@
 
   <footer>
     A Bettor Odds tool. Works on Novig, Kalshi, Polymarket, PrizePicks — and any app you add.<br>
-    Reads the odds on-device only; the app has no internet permission and sends nothing anywhere.
+    Reads the odds entirely on your device. The only time it goes online is to check for a newer version - it never sends anything about your screen or your activity.
   </footer>
 
 </div>
