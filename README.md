@@ -6,14 +6,19 @@ app-agnostic, so it works anywhere percentages are rendered as text.
 
 ## How it works
 
-1. `MediaProjection` mirrors the display into an `ImageReader`.
-2. Frames are sampled at 4/sec and fingerprinted. Identical frames are dropped before OCR.
-3. Once a frame has been stable for two samples, ML Kit's on-device recognizer returns text with
-   bounding boxes.
-4. Percentage tokens are converted to American odds and painted over their own bounding boxes by a
-   non-touchable `TYPE_APPLICATION_OVERLAY` window.
+An **accessibility service** watches which app is in the foreground. The moment a target app (Novig
+and other prediction markets, plus any the user adds) comes forward, it:
 
-Nothing leaves the device. There is no network permission in the manifest.
+1. shows a "Show American odds?" prompt (or converts immediately if set to always-on for that app),
+2. reads the screen with the accessibility screenshot API - no per-session capture consent,
+3. runs on-device OCR, converts each percentage, and paints the American odds over it,
+4. re-reads on the app's content-changed events, throttled to ~1/sec.
+
+When the user leaves the app, an event fires and the overlay clears and goes idle - it does nothing
+outside a target app. Nothing leaves the device; there is no network permission.
+
+The user enables the service once in Settings. After that, opening a target app is the whole
+interaction - no launching this app, no per-session taps.
 
 ## Design notes
 
@@ -55,23 +60,17 @@ or open the project in Android Studio, which writes it on first sync.
 
 ## Status
 
-Verified end to end on an Android 14 emulator: screen capture -> on-device OCR -> conversion ->
-in-place overlay. All six test prices converted correctly (56.6% -> -130, 43.4% -> +130, 40.0% ->
-+150, 60.0% -> -150, 72.5% -> -264, 27.5% -> +264) and drew on the correct rows. Conversion math is
-also covered by 9 unit tests.
+Verified end to end on an Android 14 emulator, fully automatic: enable the accessibility service ->
+open the target app -> the "Show American odds?" prompt appears -> tap Turn on -> all six test
+prices convert correctly and cleanly (56.6->-130, 43.4->+130, 40.0->+150, 60.0->-150, 72.5->-264,
+27.5->+264). Leaving the app clears the overlay; returning restores it on its own. Conversion math
+is covered by 9 unit tests.
 
-A debug-only `DebugBoardActivity` (debug source set, never in release) shows a static percentage
-board for verifying the overlay without a live app:
-`adb shell am start -n com.bettorodds.oddsoverlay/.DebugBoardActivity`.
+A debug-only `DebugBoardActivity` (debug source set) stands in for a target app so the pipeline can
+be verified without a live one.
 
-### Known items to tune on a real device
-These surfaced during emulator testing and are best finished against the real Novig app, whose OCR
-boxes are exact (the emulator's scaled test host is not):
-
-- **Chip masking.** The converted chip should fully cover the original percentage. Bleed is set
-  generously; confirm it covers cleanly at Novig's real font size and adjust `HORIZONTAL_BLEED` /
-  `VERTICAL_BLEED` in `OverlayView`.
-- **Transient misreads.** During screen animations OCR can briefly read a fragment and draw a wrong
-  value that sticks once the screen goes static. A real static board avoids this, but a robust
-  build should require a value to be read twice before committing it. Not yet implemented.
-- **Battery/heat.** Measure over 20-30 minutes on a real phone; the emulator gives no useful number.
+### Still owed on a real device
+- Confirm against the real Novig app - its odds may be canvas-drawn; the screenshot+OCR path handles
+  that, but only a real device proves the layout.
+- Filter transient misreads during heavy animation (read a value twice before committing).
+- Measure battery over a real session.

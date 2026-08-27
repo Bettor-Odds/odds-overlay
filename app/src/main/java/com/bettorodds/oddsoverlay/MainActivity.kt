@@ -1,93 +1,59 @@
 package com.bettorodds.oddsoverlay
 
-import android.Manifest
-import android.content.Context
 import android.content.Intent
-import android.media.projection.MediaProjectionManager
-import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.TextUtils
 import android.widget.Button
 import android.widget.TextView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Walks the three grants the overlay needs - notifications, draw-over-other-apps, and screen
- * capture - then hands the projection token to [OverlayService].
+ * Setup and status. The whole point of the accessibility approach is that this screen is visited
+ * once: enable the service, then never open the app again - opening a target app is all it takes.
  */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var statusView: TextView
-    private lateinit var startButton: Button
-
-    private val requestNotifications = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { requestOverlayPermission() }
-
-    private val requestProjection = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val data = result.data
-        if (result.resultCode == RESULT_OK && data != null) {
-            OverlayService.start(this, result.resultCode, data)
-            statusView.setText(R.string.status_running)
-            moveTaskToBack(true)
-        } else {
-            statusView.setText(R.string.status_capture_declined)
-        }
-    }
+    private lateinit var status: TextView
+    private lateinit var enableButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        statusView = findViewById(R.id.status)
-        startButton = findViewById(R.id.start_button)
-        startButton.setOnClickListener { requestNotificationsThenStart() }
-
-        findViewById<Button>(R.id.stop_button).setOnClickListener {
-            startService(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_STOP))
-            statusView.setText(R.string.status_stopped)
+        status = findViewById(R.id.status)
+        enableButton = findViewById(R.id.enable_button)
+        enableButton.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
+
+        findViewById<TextView>(R.id.supported_apps).text =
+            getString(R.string.supported_apps, TargetApps.BUILT_IN.values.joinToString(", "))
     }
 
     override fun onResume() {
         super.onResume()
-        if (pendingOverlayGrant && Settings.canDrawOverlays(this)) {
-            pendingOverlayGrant = false
-            requestScreenCapture()
-        }
+        render(isServiceEnabled())
     }
 
-    private var pendingOverlayGrant = false
-
-    private fun requestNotificationsThenStart() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requestNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    private fun render(enabled: Boolean) {
+        if (enabled) {
+            status.setText(R.string.status_on)
+            enableButton.setText(R.string.button_manage)
         } else {
-            requestOverlayPermission()
+            status.setText(R.string.status_off)
+            enableButton.setText(R.string.button_enable)
         }
     }
 
-    private fun requestOverlayPermission() {
-        if (Settings.canDrawOverlays(this)) {
-            requestScreenCapture()
-            return
-        }
-        pendingOverlayGrant = true
-        statusView.setText(R.string.status_needs_overlay)
-        startActivity(
-            Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:$packageName")
-            )
-        )
-    }
-
-    private fun requestScreenCapture() {
-        val manager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        requestProjection.launch(manager.createScreenCaptureIntent())
+    private fun isServiceEnabled(): Boolean {
+        val flat = Settings.Secure.getString(
+            contentResolver,
+            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        ) ?: return false
+        val target = "$packageName/${OddsAccessibilityService::class.java.name}"
+        val splitter = TextUtils.SimpleStringSplitter(':')
+        splitter.setString(flat)
+        return splitter.any { it.equals(target, ignoreCase = true) }
     }
 }
