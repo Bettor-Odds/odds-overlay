@@ -43,6 +43,6 @@ jobs:
         with:
           files: out/*.apk
           body: |
-            One-tap install page: https://REPO_OWNER.github.io/odds-overlay/
+            One-tap install page: https://bettor-odds.github.io/odds-overlay/
 
             Or download odds-overlay.apk below, open it on an Android phone, and follow the prompts.
