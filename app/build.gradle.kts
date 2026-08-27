@@ -11,8 +11,8 @@ android {
         applicationId = "com.bettorodds.oddsoverlay"
         minSdk = 30
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.4.1"
+        versionCode = 7
+        versionName = "0.4.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
