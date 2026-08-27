@@ -32,7 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:text="@string/update_button" />
+                android:text="@string/update_install" />
         </LinearLayout>
 
         <TextView

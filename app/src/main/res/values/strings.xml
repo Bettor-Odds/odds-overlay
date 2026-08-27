@@ -18,6 +18,9 @@
     <string name="prompt_turn_on">Turn on</string>
     <string name="prompt_always">Always do this here</string>
     <string name="prompt_not_now">Not now</string>
-    <string name="update_available">Update available (%1$s). Tap to download the new version.</string>
-    <string name="update_button">Update</string>
+    <string name="update_preparing">Update %1$s found - downloading...</string>
+    <string name="update_ready">Update %1$s ready to install.</string>
+    <string name="update_available">Update %1$s available.</string>
+    <string name="update_install">Install update</string>
+    <string name="update_download">Download update</string>
 </resources>
