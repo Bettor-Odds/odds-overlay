@@ -13,11 +13,24 @@ object NodeReader {
      *  exposes readable text at all (zero means it draws to a canvas and we must fall back to OCR). */
     data class Result(val hits: List<PriceHit>, val textNodeCount: Int)
 
-    fun read(root: AccessibilityNodeInfo?): Result {
+    fun read(root: AccessibilityNodeInfo?, screenWidth: Int, screenHeight: Int): Result {
         if (root == null) return Result(emptyList(), 0)
         val hits = ArrayList<PriceHit>()
+        val seen = HashSet<Long>()
         var textNodes = 0
         val scratch = Rect()
+
+        fun add(bounds: Rect, display: String) {
+            // Drop anything scrolled off-screen so virtualized rows do not draw stray chips.
+            if (bounds.bottom <= 0 || bounds.top >= screenHeight ||
+                bounds.right <= 0 || bounds.left >= screenWidth
+            ) return
+            if (bounds.width() <= 0 || bounds.height() <= 0) return
+            // De-duplicate: the same value in the same spot can appear on more than one node.
+            val key = (bounds.centerX() / 8).toLong() shl 32 or (bounds.centerY() / 8).toLong()
+            if (!seen.add(key)) return
+            hits.add(PriceHit(Rect(bounds), display))
+        }
 
         fun walk(node: AccessibilityNodeInfo?) {
             if (node == null) return
@@ -27,22 +40,23 @@ object NodeReader {
                 val matches = OddsConverter.findPercentages(text)
                 if (matches.isNotEmpty()) {
                     node.getBoundsInScreen(scratch)
-                    if (!scratch.isEmpty) {
-                        val trimmedLen = text.trim().length
-                        for (m in matches) {
-                            // If the node is exactly the percentage, its bounds are the chip. If it
-                            // carries a label too, apportion the bounds by character offset.
-                            val bounds = if (matches.size == 1 && m.raw.length == trimmedLen) {
-                                Rect(scratch)
-                            } else {
-                                narrow(scratch, m, text.length)
-                            }
-                            hits.add(PriceHit(bounds, m.display))
+                    val trimmedLen = text.trim().length
+                    for (m in matches) {
+                        val bounds = if (matches.size == 1 && m.raw.length == trimmedLen) {
+                            scratch
+                        } else {
+                            narrow(scratch, m, text.length)
                         }
+                        add(bounds, m.display)
                     }
                 }
             }
-            for (i in 0 until node.childCount) walk(node.getChild(i))
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i) ?: continue
+                walk(child)
+                @Suppress("DEPRECATION")
+                try { child.recycle() } catch (_: Exception) {}
+            }
         }
 
         walk(root)

@@ -21,8 +21,8 @@ import kotlinx.coroutines.withContext
  * Watches the foreground app and, inside a target app, paints American odds over its percentages.
  *
  * Reads odds from the view tree (fast, exact, live) and only falls back to a screenshot + OCR when
- * the app exposes no readable text. Tracks scroll events so chips move with the content, and
- * disarms itself after a spell of inactivity or when the user leaves the app.
+ * the app exposes no readable text. Reads on a per-frame cadence while scrolling and a lazy cadence
+ * when the board is still, and disarms after a spell of inactivity or when the user leaves the app.
  */
 class OddsAccessibilityService : AccessibilityService() {
 
@@ -34,19 +34,27 @@ class OddsAccessibilityService : AccessibilityService() {
     private var overlayView: OverlayView? = null
     private var prompt: ActivationPrompt? = null
 
+    private var screenWidth = 0
+    private var screenHeight = 0
+
     private var currentTarget: String? = null
     private var armed = false
     private var activatedThisVisit = false
     private var chipStyle: ChipStyle = ThemeSampler.DARK
 
-    private var nodeReadScheduled = false
+    private var readPending = false
+    private var pendingFast = false
     private var lastOcrAt = 0L
     private var ocrInFlight = false
 
+    private val readRunnable = Runnable { readPending = false; readNodes() }
     private val disarmForIdle = Runnable { if (armed) disarm(keepVisit = true) }
 
     override fun onServiceConnected() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        val bounds = windowManager.currentWindowMetrics.bounds
+        screenWidth = bounds.width()
+        screenHeight = bounds.height()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -60,16 +68,17 @@ class OddsAccessibilityService : AccessibilityService() {
             }
 
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                if (event.packageName == currentTarget) onTargetActivity(scheduleRead = true)
+                if (event.packageName == currentTarget) onTargetActivity(fast = false)
             }
 
             AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                if (event.packageName != currentTarget || !armed) return
-                // Move chips with the content this frame, then re-read to correct.
-                val dy = event.scrollDeltaY
-                val dx = event.scrollDeltaX
-                if (dy != 0 || dx != 0) overlayView?.nudge(-dx.toFloat(), -dy.toFloat())
-                onTargetActivity(scheduleRead = true)
+                if (event.packageName != currentTarget) return
+                if (armed) {
+                    val dy = event.scrollDeltaY
+                    val dx = event.scrollDeltaX
+                    if (dy != 0 || dx != 0) overlayView?.nudge(-dx.toFloat(), -dy.toFloat())
+                }
+                onTargetActivity(fast = true)   // re-arms if idle-disarmed
             }
         }
     }
@@ -79,6 +88,8 @@ class OddsAccessibilityService : AccessibilityService() {
     private fun onForegroundApp(pkg: String, isDebugBoard: Boolean) {
         if (isDebugBoard || TargetApps.isTarget(this, pkg)) {
             if (pkg == currentTarget) return
+            disarm(keepVisit = false)           // clear the previous app's chips/prompt
+            removePrompt()
             currentTarget = pkg
             if (isDebugBoard || TargetApps.isAutoOn(this, pkg)) arm() else showPrompt(pkg)
         } else if (currentTarget != null) {
@@ -87,11 +98,11 @@ class OddsAccessibilityService : AccessibilityService() {
     }
 
     /** Any interaction inside the target: keep the overlay alive and push out the idle timer. */
-    private fun onTargetActivity(scheduleRead: Boolean) {
+    private fun onTargetActivity(fast: Boolean) {
         if (!armed && activatedThisVisit) arm()      // re-arm after an idle disarm
         if (!armed) return
         resetIdleTimer()
-        if (scheduleRead) scheduleNodeRead()
+        scheduleRead(fast)
     }
 
     private fun arm() {
@@ -101,15 +112,23 @@ class OddsAccessibilityService : AccessibilityService() {
         attachOverlay()
         refreshTheme()
         resetIdleTimer()
-        scheduleNodeRead()
+        readNodes()            // paint on the first frame
+        scheduleRead(fast = true)
     }
 
-    /** Stop drawing. [keepVisit] leaves the door open to silently re-arm on the next interaction. */
     private fun disarm(keepVisit: Boolean) {
         armed = false
         if (!keepVisit) activatedThisVisit = false
         handler.removeCallbacks(disarmForIdle)
+        handler.removeCallbacks(readRunnable)
+        readPending = false
         removeOverlay()
+    }
+
+    private fun currentScreenBounds() {
+        val bounds = windowManager.currentWindowMetrics.bounds
+        screenWidth = bounds.width()
+        screenHeight = bounds.height()
     }
 
     private fun leaveTarget() {
@@ -123,20 +142,30 @@ class OddsAccessibilityService : AccessibilityService() {
         handler.postDelayed(disarmForIdle, IDLE_TIMEOUT_MS)
     }
 
-    private fun scheduleNodeRead() {
-        if (nodeReadScheduled) return
-        nodeReadScheduled = true
-        handler.postDelayed({ nodeReadScheduled = false; readNodes() }, NODE_THROTTLE_MS)
+    /** Fast reads track scrolling; slow reads keep a still board fresh without burning battery. */
+    private fun scheduleRead(fast: Boolean) {
+        if (readPending) {
+            if (fast && !pendingFast) {              // upgrade a lazy read to a fast one
+                handler.removeCallbacks(readRunnable)
+                pendingFast = true
+                handler.postDelayed(readRunnable, FAST_READ_MS)
+            }
+            return
+        }
+        readPending = true
+        pendingFast = fast
+        handler.postDelayed(readRunnable, if (fast) FAST_READ_MS else SLOW_READ_MS)
     }
 
     private fun readNodes() {
         if (!armed) return
+        currentScreenBounds()
         val root = try {
             rootInActiveWindow
         } catch (e: Exception) {
             null
-        }
-        val result = NodeReader.read(root)
+        } ?: return
+        val result = NodeReader.read(root, screenWidth, screenHeight)
         when {
             result.hits.size >= MIN_HITS_TO_DRAW -> {
                 val styled = result.hits.map {
@@ -144,9 +173,7 @@ class OddsAccessibilityService : AccessibilityService() {
                 }
                 overlayView?.show(styled)
             }
-            // Text is readable but no odds are on screen: clear rather than hold stale chips.
             result.textNodeCount > 0 -> overlayView?.clear()
-            // No readable text at all - a canvas-drawn app. Fall back to screenshot + OCR.
             else -> requestOcrFallback()
         }
     }
@@ -182,7 +209,7 @@ class OddsAccessibilityService : AccessibilityService() {
                         Bitmap.wrapHardwareBuffer(buffer, result.colorSpace)
                             ?.copy(Bitmap.Config.ARGB_8888, false)
                     }
-                    if (bitmap != null) onBitmap(bitmap)
+                    if (bitmap != null) onBitmap(bitmap) else ocrInFlight = false
                 }
 
                 override fun onFailure(errorCode: Int) {
@@ -245,7 +272,8 @@ class OddsAccessibilityService : AccessibilityService() {
 
     private companion object {
         const val MIN_HITS_TO_DRAW = 2
-        const val NODE_THROTTLE_MS = 16L
+        const val FAST_READ_MS = 16L
+        const val SLOW_READ_MS = 150L
         const val OCR_INTERVAL_MS = 1000L
         const val IDLE_TIMEOUT_MS = 3 * 60 * 1000L
     }

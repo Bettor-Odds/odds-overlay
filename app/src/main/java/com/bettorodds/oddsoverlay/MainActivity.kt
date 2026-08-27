@@ -1,21 +1,25 @@
 package com.bettorodds.oddsoverlay
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.text.TextUtils
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 /**
- * Setup and status. The whole point of the accessibility approach is that this screen is visited
- * once: enable the service, then never open the app again - opening a target app is all it takes.
+ * Setup and status. Visited once to enable the service; also surfaces an update banner, since a
+ * sideloaded app cannot update itself silently.
  */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var status: TextView
     private lateinit var enableButton: Button
+    private lateinit var updateCard: View
+    private lateinit var updateButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,12 +27,17 @@ class MainActivity : AppCompatActivity() {
 
         status = findViewById(R.id.status)
         enableButton = findViewById(R.id.enable_button)
+        updateCard = findViewById(R.id.update_card)
+        updateButton = findViewById(R.id.update_button)
+
         enableButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
 
         findViewById<TextView>(R.id.supported_apps).text =
             getString(R.string.supported_apps, TargetApps.BUILT_IN.values.joinToString(", "))
+
+        checkForUpdate()
     }
 
     override fun onResume() {
@@ -44,6 +53,21 @@ class MainActivity : AppCompatActivity() {
             status.setText(R.string.status_off)
             enableButton.setText(R.string.button_enable)
         }
+    }
+
+    private fun checkForUpdate() {
+        Thread {
+            val update = UpdateChecker.check(BuildConfig.VERSION_NAME) ?: return@Thread
+            runOnUiThread {
+                if (isFinishing) return@runOnUiThread
+                updateCard.visibility = View.VISIBLE
+                findViewById<TextView>(R.id.update_text).text =
+                    getString(R.string.update_available, update.latestVersion)
+                updateButton.setOnClickListener {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UpdateChecker.DOWNLOAD_URL)))
+                }
+            }
+        }.start()
     }
 
     private fun isServiceEnabled(): Boolean {
