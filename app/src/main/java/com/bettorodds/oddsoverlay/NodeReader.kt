@@ -39,8 +39,10 @@ object NodeReader {
                 (b.bottom <= 0 || b.top >= screenHeight || b.right <= 0 || b.left >= screenWidth)
             if (offScreen) return
 
+            // Only the leaf that actually holds the text - a parent button echoes its child's
+            // "43.4%" but reports the whole selection's bounds, which would cover the entire cell.
             val text = node.text?.toString()
-            if (!text.isNullOrEmpty()) {
+            if (!text.isNullOrEmpty() && node.childCount == 0) {
                 textNodes++
                 val matches = OddsConverter.findPercentages(text)
                 if (matches.isNotEmpty() && !b.isEmpty) {

@@ -304,7 +304,7 @@ class OddsAccessibilityService : AccessibilityService() {
         const val MIN_HITS_TO_DRAW = 2
         const val FAST_READ_MS = 16L
         const val SLOW_READ_MS = 150L
-        const val CORRECTION_MS = 90L
+        const val CORRECTION_MS = 55L
         const val SCROLL_END_MS = 130L
         const val OCR_INTERVAL_MS = 1000L
         const val IDLE_TIMEOUT_MS = 3 * 60 * 1000L
