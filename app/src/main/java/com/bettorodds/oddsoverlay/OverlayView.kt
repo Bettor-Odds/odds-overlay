@@ -24,25 +24,46 @@ class OverlayView(context: Context) : View(context) {
     private val locationOnScreen = IntArray(2)
 
     private var hits: List<StyledHit> = emptyList()
+    private var scrollOffsetX = 0f
+    private var scrollOffsetY = 0f
 
     fun show(newHits: List<StyledHit>) {
         hits = newHits
+        // Fresh bounds already reflect the current scroll position, so drop the optimistic offset.
+        scrollOffsetX = 0f
+        scrollOffsetY = 0f
+        invalidate()
+    }
+
+    /**
+     * Shift the current chips by a scroll delta immediately, before a re-read arrives. The chips
+     * move with the content in the same frame; the next [show] with real bounds corrects any drift.
+     */
+    fun nudge(dx: Float, dy: Float) {
+        if (hits.isEmpty()) return
+        scrollOffsetX += dx
+        scrollOffsetY += dy
         invalidate()
     }
 
     fun clear() {
         if (hits.isEmpty()) return
         hits = emptyList()
+        scrollOffsetX = 0f
+        scrollOffsetY = 0f
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        // Hit bounds are in capture space, whose origin is the physical top-left of the screen.
-        // The overlay window's own top-left can sit below the status bar, so translate the canvas by
-        // the view's actual on-screen position to put chips back where their percentages are.
+        // Bounds are in screen space, whose origin is the physical top-left. The overlay window's
+        // own top-left can sit below the status bar, so translate by the view's on-screen position;
+        // add the optimistic scroll offset so chips track a scroll without waiting for a re-read.
         getLocationOnScreen(locationOnScreen)
-        canvas.translate(-locationOnScreen[0].toFloat(), -locationOnScreen[1].toFloat())
+        canvas.translate(
+            -locationOnScreen[0].toFloat() + scrollOffsetX,
+            -locationOnScreen[1].toFloat() + scrollOffsetY
+        )
         for (hit in hits) {
             drawChip(canvas, hit)
         }
