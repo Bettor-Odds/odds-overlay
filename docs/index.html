@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odds Overlay</title>
+<style>
+  :root{
+    --bg:#0b1220; --card:#111a2e; --line:#1e2b47;
+    --ink:#f5f8ff; --mut:#9fb0cc; --grn:#39d98a; --grnk:#0c8f56;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:0 20px 64px;
+  }
+  .wrap{max-width:520px;margin:0 auto}
+  header{text-align:center;padding:48px 0 28px}
+  .logo{
+    width:64px;height:64px;border-radius:16px;margin:0 auto 18px;
+    background:linear-gradient(135deg,);background:#0f1a30;
+    display:flex;align-items:flex-end;justify-content:center;gap:5px;padding:14px;
+    border:1px solid var(--line)
+  }
+  .logo i{display:block;width:9px;background:var(--grn);border-radius:2px}
+  .logo i:nth-child(1){height:40%} .logo i:nth-child(2){height:78%} .logo i:nth-child(3){height:56%}
+  h1{font-size:30px;letter-spacing:-.02em;margin-bottom:8px}
+  .sub{color:var(--mut);font-size:17px}
+  .cta{
+    display:block;width:100%;text-align:center;text-decoration:none;
+    background:var(--grn);color:#04231a;font-weight:700;font-size:19px;
+    padding:18px 20px;border-radius:14px;margin:28px 0 10px;
+    box-shadow:0 8px 24px rgba(57,217,138,.25)
+  }
+  .cta:active{transform:translateY(1px)}
+  .cta.small{background:transparent;color:var(--grn);border:1px solid var(--line);
+    box-shadow:none;font-size:16px;padding:14px}
+  .fineprint{color:var(--mut);font-size:13.5px;text-align:center;margin-bottom:8px}
+  .note{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;margin:24px 0;color:var(--mut);font-size:14.5px
+  }
+  .note b{color:var(--ink)}
+  h2{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+    margin:36px 0 14px}
+  .step{
+    display:flex;gap:14px;align-items:flex-start;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 16px;margin-bottom:12px
+  }
+  .num{
+    flex:none;width:30px;height:30px;border-radius:50%;
+    background:var(--grnk);color:#eafff5;font-weight:700;font-size:15px;
+    display:flex;align-items:center;justify-content:center
+  }
+  .step h3{font-size:16px;margin-bottom:3px}
+  .step p{color:var(--mut);font-size:14px}
+  .step p .k{color:var(--ink);font-weight:600}
+  .ios{display:none}
+  .platform-hide{display:none}
+  footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:40px;line-height:1.7}
+  footer a{color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo"><i></i><i></i><i></i></div>
+    <h1>Odds Overlay</h1>
+    <p class="sub">Turns the percentages in Novig back into American odds — right on top of the app.</p>
+  </header>
+
+  <!-- ANDROID VIEW -->
+  <div id="android">
+    <a class="cta" id="dl" href="#">Download for Android</a>
+    <p class="fineprint">Free. Nothing leaves your phone. Not on the Play Store — installs directly.</p>
+
+    <div class="note">
+      <b>Heads up:</b> because this draws over other apps, Google won't list it in the Play Store,
+      so your phone will ask a couple of times if you're sure. You are. Just tap allow.
+    </div>
+
+    <h2>After it downloads</h2>
+
+    <div class="step">
+      <div class="num">1</div>
+      <div>
+        <h3>Open the file</h3>
+        <p>Tap the download. If it says the file can't be opened, tap <span class="k">Settings</span>
+        then turn on <span class="k">Allow from this source</span> and go back.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">2</div>
+      <div>
+        <h3>Open Odds Overlay and tap Start</h3>
+        <p>It'll ask for three things. Tap <span class="k">Allow</span> on notifications, then
+        <span class="k">Allow</span> on "Display over other apps."</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">3</div>
+      <div>
+        <h3>Tap "Start now" on the recording screen</h3>
+        <p>Android warns it will "capture your screen." That's how it reads the odds — it stays on
+        your phone and nothing is recorded or sent. Tap <span class="k">Start now</span>.</p>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="num">4</div>
+      <div>
+        <h3>Open Novig</h3>
+        <p>The percentages are now American odds. Turn it off any time from the notification.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- iOS / OTHER VIEW -->
+  <div id="ios" class="ios">
+    <div class="note" style="text-align:center">
+      <b>This is an Android app.</b><br>
+      iPhone can't let one app draw over another, so there's no iPhone version yet.
+      Open this link on an Android phone to install it.
+    </div>
+    <a class="cta small" id="dl2" href="#">Download the APK anyway</a>
+    <p class="fineprint">Only works once installed on Android.</p>
+  </div>
+
+  <footer>
+    Built by the Bettor Odds team. Works on any Android 10+ phone.<br>
+    Reads the screen on-device only — the app has no internet permission.
+  </footer>
+
+</div>
+
+<script>
+  // Point both buttons at the latest release asset (stable filename across versions).
+  var APK = "https://github.com/REPO_SLUG/releases/latest/download/odds-overlay.apk";
+  document.getElementById("dl").href = APK;
+  document.getElementById("dl2").href = APK;
+
+  // Show the right instructions for the phone in hand.
+  var ua = navigator.userAgent || "";
+  var isAndroid = /Android/i.test(ua);
+  var isiOS = /iPhone|iPad|iPod/i.test(ua);
+  if (!isAndroid && (isiOS || !/Mobile/i.test(ua))) {
+    document.getElementById("android").style.display = "none";
+    document.getElementById("ios").style.display = "block";
+  }
+</script>
+</body>
+</html>

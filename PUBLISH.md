@@ -1,35 +1,27 @@
-# Publishing to GitHub
+# Publishing the download page
 
-Done from your machine - this build environment has no GitHub credentials, so the repo and release
-have to be created by you (or anyone with push rights).
+The build machine has no GitHub login, so this last step runs from your terminal.
 
-## One-time: create the public repo and push
+## One command
 ```
 cd /Users/corbie/pm-odds-overlay
-
-# with the gh CLI (brew install gh; gh auth login), simplest:
-gh repo create bettor-odds/odds-overlay --public --source=. --remote=origin --push
-
-# or by hand, after creating an empty public repo in the GitHub UI:
-git remote add origin https://github.com/<you>/odds-overlay.git
-git push -u origin main
+brew install gh && gh auth login      # first time only
+./publish.sh bettor-odds v0.1.0       # <your-github-org> <version>
 ```
 
-## Cut a release with a downloadable APK
-Tagging triggers .github/workflows/release.yml, which builds the APK on CI and attaches it:
-```
-git tag v0.1.0
-git push origin v0.1.0
-```
-The download link is then:
-`https://github.com/<you>/odds-overlay/releases/latest`
+That creates the public repo, turns on the download page, and publishes the APK. It prints:
 
-## Or attach the APK already built here, without waiting on CI
-```
-gh release create v0.1.0 dist/odds-overlay-v0.1.0.apk \
-  --title "v0.1.0" \
-  --notes "Sideload build. See INSTALL.md."
-```
+- Download page: `https://bettor-odds.github.io/odds-overlay/`  <- send this to users
+- Direct APK:    `https://github.com/bettor-odds/odds-overlay/releases/latest/download/odds-overlay.apk`
 
-The APK in `dist/` is a debug build - fine for sideloading and sharing. For a Play-independent
-"official" build you would sign a release APK with your own keystore; not required for sideload.
+The page auto-detects Android, shows one big Download button, and walks users through the three
+permission prompts. iPhone visitors see a short "Android only" note instead.
+
+## Shipping a new version later
+Bump `versionCode`/`versionName` in `app/build.gradle.kts`, rebuild, then:
+```
+./gradlew :app:assembleDebug
+cp app/build/outputs/apk/debug/app-debug.apk dist/odds-overlay-v0.2.0.apk
+./publish.sh bettor-odds v0.2.0
+```
+The download page link never changes - it always points at the latest release.
