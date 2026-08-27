@@ -49,7 +49,7 @@ class OverlayService : Service() {
         }
 
         val resultCode = intent?.getIntExtra(EXTRA_RESULT_CODE, 0) ?: 0
-        val resultData = intent?.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
+        val resultData = intent?.projectionData()
         if (resultCode == 0 || resultData == null) {
             stopSelf()
             return START_NOT_STICKY
@@ -198,3 +198,12 @@ class OverlayService : Service() {
         }
     }
 }
+
+/** Reads the projection [Intent] with the type-safe overload on API 33+, the deprecated one below. */
+private fun Intent.projectionData(): Intent? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        getParcelableExtra(OverlayService.EXTRA_RESULT_DATA, Intent::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        getParcelableExtra(OverlayService.EXTRA_RESULT_DATA)
+    }

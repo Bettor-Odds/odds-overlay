@@ -55,5 +55,6 @@ or open the project in Android Studio, which writes it on first sync.
 
 ## Status
 
-Unverified against a device. Written without an Android toolchain available; compile and run before
-trusting any of it.
+Builds clean on JDK 17 + SDK 35. All 9 conversion unit tests pass. APK is 55MB (ML Kit OCR models
+are bundled so recognition works with no network). Not yet run on a physical device - the overlay
+alignment against Novig's live board is the one thing that needs a real phone to confirm.
