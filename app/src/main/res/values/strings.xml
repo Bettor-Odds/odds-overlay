@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Odds Overlay</string>
-    <string name="headline">Percentages to American odds</string>
-    <string name="explainer">Turn this on once. After that, opening a prediction market app is all it takes - the American odds appear over the percentages on their own, and it switches off when you leave the app.</string>
+    <string name="app_name">Odds Converter</string>
+    <string name="headline">Prediction Market\nAmerican Odds Converter</string>
+    <string name="byline">by Bettor Odds</string>
+    <string name="explainer">Turn this on once. After that, opening a prediction market app is all it takes - the American odds appear over the percentages on their own, and it switches off when you leave the app or after a few minutes idle.</string>
     <string name="status_off">Not enabled</string>
     <string name="status_on">Enabled - open a supported app</string>
     <string name="button_enable">Enable</string>
     <string name="button_manage">Manage in settings</string>
-    <string name="setup_hint">On the next screen, find Odds Overlay under Downloaded apps and turn it on. On Android 13+ you may first need to allow restricted settings from the app info menu.</string>
+    <string name="setup_hint">On the next screen, find Odds Converter under Downloaded apps and turn it on. On Android 13+ you may first need to allow restricted settings from the app info menu.</string>
     <string name="supported_apps">Works in: %1$s - and any app you add.</string>
 
     <string name="accessibility_description">Reads the on-screen odds in prediction market apps so it can show them as American odds. Nothing leaves the device.</string>

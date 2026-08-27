@@ -20,6 +20,14 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/byline"
+            android:textSize="15sp"
+            android:textColor="#39D98A" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:text="@string/explainer"
             android:textSize="15sp" />
